@@ -58,8 +58,11 @@ describe("errorCodeForStatus", () => {
     expect(errorCodeForStatus(503)).toBe<ApiErrorCode>("INTERNAL_SERVER_ERROR");
   });
 
+  it("maps 429 to RATE_LIMITED", () => {
+    expect(errorCodeForStatus(429)).toBe<ApiErrorCode>("RATE_LIMITED");
+  });
+
   it("maps other 4xx codes to REQUEST_ERROR", () => {
-    expect(errorCodeForStatus(429)).toBe<ApiErrorCode>("REQUEST_ERROR");
     expect(errorCodeForStatus(401)).toBe<ApiErrorCode>("REQUEST_ERROR");
   });
 });

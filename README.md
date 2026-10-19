@@ -279,6 +279,7 @@ All error responses follow a consistent JSON shape:
 |------|-------------|-------------|
 | `VALIDATION_ERROR` | 400 | Invalid input parameters or malformed request |
 | `NOT_FOUND` | 404 | Requested resource does not exist |
+| `RATE_LIMITED` | 429 | Rate limit exceeded (Retry-After header indicates wait duration) |
 | `REQUEST_ERROR` | 400 | General client-side request error |
 | `INTERNAL_SERVER_ERROR` | 500 | Server-side failure (see server logs with requestId) |
 

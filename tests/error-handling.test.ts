@@ -28,8 +28,12 @@ describe("errorCodeForStatus (#73)", () => {
     expect(errorCodeForStatus(503)).toBe("INTERNAL_SERVER_ERROR");
   });
 
+  it("maps 429 to RATE_LIMITED", () => {
+    expect(errorCodeForStatus(429)).toBe("RATE_LIMITED");
+  });
+
   it("falls back to REQUEST_ERROR for other client errors", () => {
-    expect(errorCodeForStatus(429)).toBe("REQUEST_ERROR");
+    expect(errorCodeForStatus(401)).toBe("REQUEST_ERROR");
   });
 });
 
@@ -47,7 +51,7 @@ describe("request rate limiting (#381)", () => {
       const limited = await app.inject({ method: "GET", url: "/rate-limited" });
       expect(limited.statusCode).toBe(429);
       expect(limited.headers["retry-after"]).toBe("3");
-      expect(limited.json()).toMatchObject({ code: "REQUEST_ERROR", error: "rate limit exceeded" });
+      expect(limited.json()).toMatchObject({ code: "RATE_LIMITED", error: "rate limit exceeded" });
 
       now.mockReturnValue(14_100);
       const nearlyExpired = await app.inject({ method: "GET", url: "/rate-limited" });
