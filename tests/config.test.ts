@@ -9,6 +9,7 @@ import {
   MIN_POLL_INTERVAL_MS,
   isLocalUrl,
   loadConfig,
+  parseCorsOrigins,
   type Config,
 } from "../src/config.js";
 
@@ -466,6 +467,102 @@ describe("loadConfig — readonly configuration (#369)", () => {
       config.trustedProxies.push("192.168.1.1");
     };
     expect(mutate).toBeDefined();
+  });
+});
+
+describe("parseCorsOrigins / CORS_ORIGIN validation", () => {
+  it("returns undefined when CORS_ORIGIN is unset or blank", () => {
+    expect(parseCorsOrigins(undefined)).toBeUndefined();
+    expect(parseCorsOrigins("")).toBeUndefined();
+    expect(parseCorsOrigins("   ")).toBeUndefined();
+  });
+
+  it("accepts a single origin without path", () => {
+    expect(parseCorsOrigins("https://app.example.com")).toEqual([
+      "https://app.example.com",
+    ]);
+  });
+
+  it("accepts a comma-separated list of origins with varying whitespace", () => {
+    expect(
+      parseCorsOrigins(
+        "https://app.example.com, https://staging.example.com ,http://localhost:3000",
+      ),
+    ).toEqual([
+      "https://app.example.com",
+      "https://staging.example.com",
+      "http://localhost:3000",
+    ]);
+  });
+
+  it("deduplicates identical origins", () => {
+    expect(
+      parseCorsOrigins("https://app.example.com, https://app.example.com"),
+    ).toEqual(["https://app.example.com"]);
+  });
+
+  it("rejects an origin with a path", () => {
+    expect(() => parseCorsOrigins("https://app.example.com/api")).toThrow(
+      'CORS_ORIGIN entry "https://app.example.com/api" must be an origin without a path',
+    );
+  });
+
+  it("rejects an origin with a trailing slash", () => {
+    expect(() => parseCorsOrigins("https://app.example.com/")).toThrow(
+      'CORS_ORIGIN entry "https://app.example.com/" must be an origin without a path',
+    );
+  });
+
+  it("rejects an origin with query parameters or hash", () => {
+    expect(() => parseCorsOrigins("https://app.example.com?foo=bar")).toThrow(
+      'CORS_ORIGIN entry "https://app.example.com?foo=bar" must be an origin without a path',
+    );
+    expect(() => parseCorsOrigins("https://app.example.com#section")).toThrow(
+      'CORS_ORIGIN entry "https://app.example.com#section" must be an origin without a path',
+    );
+  });
+
+  it("rejects invalid URLs", () => {
+    expect(() => parseCorsOrigins("not-a-valid-url")).toThrow(
+      'CORS_ORIGIN entry "not-a-valid-url" is not a valid URL',
+    );
+  });
+
+  it("rejects non-http/https protocols", () => {
+    expect(() => parseCorsOrigins("ftp://example.com")).toThrow(
+      'CORS_ORIGIN entry "ftp://example.com" must use http or https protocol',
+    );
+  });
+});
+
+describe("loadConfig — CORS_ORIGIN validation", () => {
+  it("populates corsOrigins in loadConfig when valid", () => {
+    withEnv(
+      { CORS_ORIGIN: "https://prod.example.com,https://stage.example.com" },
+      () => {
+        expect(loadConfig().corsOrigins).toEqual([
+          "https://prod.example.com",
+          "https://stage.example.com",
+        ]);
+      },
+    );
+  });
+
+  it("leaves corsOrigins undefined when CORS_ORIGIN is unset", () => {
+    withEnv({ CORS_ORIGIN: undefined }, () => {
+      expect(loadConfig().corsOrigins).toBeUndefined();
+    });
+  });
+
+  it("throws when CORS_ORIGIN has an invalid origin", () => {
+    withEnv(
+      { CORS_ORIGIN: "https://prod.example.com,https://stage.example.com/path" },
+      () => {
+        expect(() => loadConfig()).toThrow(
+          'CORS_ORIGIN entry "https://stage.example.com/path" must be an origin without a path',
+        );
+      },
+    );
   });
 });
 

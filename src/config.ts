@@ -147,6 +147,52 @@ export function validateStartLedger(startLedger: number, chainHead: number): voi
   }
 }
 
+/**
+ * Parses the CORS_ORIGIN setting: a comma-separated list of allowed origins.
+ * Each entry is validated as a valid HTTP/HTTPS URL origin without a path.
+ * Returns an array of origin strings, or undefined when unset or blank.
+ */
+export function parseCorsOrigins(raw: string | undefined): string[] | undefined {
+  if (raw === undefined || raw.trim() === "") return undefined;
+  const entries = raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== "");
+
+  if (entries.length === 0) return undefined;
+
+  const origins: string[] = [];
+  for (const entry of entries) {
+    let parsed: URL;
+    try {
+      parsed = new URL(entry);
+    } catch {
+      throw new Error(`CORS_ORIGIN entry "${entry}" is not a valid URL`);
+    }
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error(
+        `CORS_ORIGIN entry "${entry}" must use http or https protocol`,
+      );
+    }
+
+    if (
+      entry.endsWith("/") ||
+      (parsed.pathname !== "/" && parsed.pathname !== "") ||
+      parsed.search !== "" ||
+      parsed.hash !== ""
+    ) {
+      throw new Error(
+        `CORS_ORIGIN entry "${entry}" must be an origin without a path`,
+      );
+    }
+
+    origins.push(parsed.origin);
+  }
+
+  return Array.from(new Set(origins));
+}
+
 export interface Config {
   readonly port: number;
   readonly host: string;
@@ -165,6 +211,7 @@ export interface Config {
   readonly trustedProxies: readonly string[];
   readonly rateLimitMax?: number;
   readonly rateLimitWindowMs?: number;
+  readonly corsOrigins?: readonly string[];
 }
 
 export function loadConfig(): Config {
@@ -217,6 +264,7 @@ export function loadConfig(): Config {
     queryStringLimit: integer("QUERY_STRING_LIMIT", 2048), // 2KB default
     // Forwarded headers are honored only for these direct peers (#75).
     trustedProxies: parseTrustedProxies(process.env.TRUSTED_PROXIES),
+    corsOrigins: parseCorsOrigins(process.env.CORS_ORIGIN),
     rateLimitMax,
     rateLimitWindowMs,
   };
@@ -295,5 +343,7 @@ export function describeConfig(config: Config): LoggedConfig {
     // Undefined when rate limiting is not configured; pino omits the field.
     rateLimitMax: config.rateLimitMax,
     rateLimitWindowMs: config.rateLimitWindowMs,
+    // Undefined when CORS_ORIGIN is not configured; pino omits the field.
+    corsOrigins: config.corsOrigins,
   };
 }

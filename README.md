@@ -693,7 +693,7 @@ current template — copy it and fill in the required values.
 | `SOROBAN_RPC_URL` | No | *network dependent* | Soroban RPC endpoint. Defaults to the public endpoint for the selected network. |
 | `PORT` | No | `3000` | HTTP server listen port. |
 | `HOST` | No | `0.0.0.0` | HTTP server bind address. |
-| `CORS_ORIGIN` | No | - | Allowed browser origin for the web client. |
+| `CORS_ORIGIN` | No | - | Allowed browser origin(s) for the web client (single origin or comma-separated list without path). |
 | `LOG_LEVEL` | No | `info` | Log verbosity (`trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent`). |
 | `LOG_PRETTY` | No | - | Set to `true` for human-readable development logs; requires the `pino-pretty` dev dependency. Output stays JSON when unset. |
 | `BODY_LIMIT` | No | `1048576` | Largest accepted request body in bytes. |

@@ -46,7 +46,6 @@ import {
   tokenSummarySchema,
 } from "../schema.js";
 import { listIndexedEvents, type IndexedEventKind } from "../repositories/indexed-events.js";
-import { vestedAmount } from "../lib/vesting.js";
 import { nowSeconds } from "../lib/time.js";
 import { vestedAmount, withdrawableAmount } from "../lib/vesting.js";
 import { DEFAULT_STREAM_SUMMARY_CACHE_TTL_MS } from "../config.js";
@@ -261,6 +260,7 @@ export async function streamRoutes(
   }
   if (!app.getSchema(ACCOUNT_SUMMARY_RESPONSE_SCHEMA_ID)) {
     app.addSchema(accountSummaryResponseSchema);
+  }
   if (!app.getSchema(STREAM_SCHEDULE_RESPONSE_SCHEMA_ID)) {
     app.addSchema(streamScheduleResponseSchema);
   }
@@ -511,7 +511,6 @@ export async function streamRoutes(
           properties: {
             kind: {
               type: "string",
-              enum: ["created", "withdrawn", "cancelled"],
               description: "Filter events by kind (created, withdrawn, or cancelled).",
             },
           },

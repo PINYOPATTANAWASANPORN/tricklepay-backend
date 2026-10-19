@@ -16,6 +16,7 @@ import { swaggerConfig, swaggerUiConfig } from "./api-spec.js";
 import {
   DEFAULT_RATE_LIMIT_MAX,
   DEFAULT_RATE_LIMIT_WINDOW_MS,
+  parseCorsOrigins,
   type Config,
 } from "./config.js";
 
@@ -149,11 +150,15 @@ export async function buildServer(config?: Partial<Config>): Promise<FastifyInst
   // The web client fetches this API from the browser, so it is always a
   // cross-origin caller once the two run on separate ports or hosts. The data
   // served here is public and read-only, so any origin is reflected by
-  // default; set CORS_ORIGIN to pin deployments to a known frontend. Not
+  // default; set CORS_ORIGIN to pin deployments to known frontends. Not
   // awaited because Fastify defers plugin loading until ready/listen, which
   // keeps this builder synchronous for its callers.
+  const corsOrigins =
+    config?.corsOrigins !== undefined
+      ? (config.corsOrigins as string[])
+      : parseCorsOrigins(process.env.CORS_ORIGIN);
   void app.register(cors, {
-    origin: process.env.CORS_ORIGIN ?? true,
+    origin: corsOrigins ?? true,
   });
 
   // Register shared schemas so routes can reference them with { $ref: "$id" }.

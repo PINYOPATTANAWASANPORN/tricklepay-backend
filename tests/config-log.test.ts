@@ -33,6 +33,7 @@ const CONFIG: Config = {
 const EXPECTED_FIELDS = [
   "bodyLimit",
   "contractId",
+  "corsOrigins",
   "databaseUrl",
   "host",
   "maxBackoffMs",
